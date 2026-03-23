@@ -37,23 +37,44 @@ def ask_passwd(PKGNAME):
 
 
 def showzen():
-	zens={
-		'installer'  :zenity --forms --title='{PKGNAME}: Installer' --text=' Pick the installpath\n\n\t FixNTFS will be installed to:\t\t $DIR/local/scripts/\n\n\t And Symlinked in:\t\t\t\t $DIR/bin ' --add-combo='           Path:     '  --combo-values=' /opt/local/fixNTFS/ | /usr/local/fixNTFS/ '
-
-
+	arguments={'install':{
+		'forms': '',
+		'title': '\t\t{PKGNAME} : Installer\t\t\n',
+		'text' : ' Pick the installpath\n\n\t',
+		'add-combo':'           Path:     ',
+		'combo-values': '/opt/local | /usr/local/ ',
+		'text' : '/fixNTFS\n\n'
 		}
+	}
+	args=[]
+	inst=arguments['install']
+	for k in inst:
+		arg=f'--{k}'
+		if inst[k]=='':
+			args+=[arg]
+			continue
+		arg+=f'="{inst[k]}"'
+		args+=[arg]
+	cmd=f'zenity {" ".join(args)}'.format(PKGNAME=pkgname)
+	print(cmd)
+	installdir=  subprocess.run(cmd, shell=True, capture_output=True, universal_newlines=True).stdout
+	return installdir
+
+
 
 
 pkgpath = getPkgPath()
 pkgname = getPkgName()
 pw = ask_passwd(pkgname)
+idir=showzen()
 os.chdir(pkgpath)
 cmd = 'make install'
 sudo = f'echo {pw} | / usr/bin/env bash sudo -S {cmd}'
 su = f'echo {pw} | su -c {cmd}'
-result = 'Install Successfull:\n - findexe :\n\tFind cmd with letters \n -lsexe :\n\tList all known commands'
+
 try:
 	subprocess.run(pkexec, shell=True, capture_output=True, universal_newlines=True).stdout
+except Exception as E1:
 	try:
 		subprocess.run(sudo, shell=True, capture_output=True, universal_newlines=True).stdout
 	except Exception as E1:
@@ -66,6 +87,8 @@ try:
 			subprocess.run(cmd, shell=True, capture_output=True, universal_newlines=True)
 			sys.exit()
 
-cmd = 'zenity --info --title="{PKGNAME}" --text="{result}" '.format(PKGNAME=pkgname, result=result)
-subprocess.run(cmd, shell=True, capture_output=True, universal_newlines=True)
+
+
+# cmd = 'zenity --info --title="{PKGNAME}" --text="{result}" '.format(PKGNAME=pkgname, result=result)
+# subprocess.run(cmd, shell=True, capture_output=True, universal_newlines=True)
 sys.exit()
